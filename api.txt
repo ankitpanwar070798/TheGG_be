@@ -1,0 +1,71 @@
+query getBlogs {
+  getBlogs(blogType: trending, searchTerm: "") {
+    id
+    author {
+      id
+      name
+      profilePic
+    }
+    title
+    titleSlug
+    body
+    viewCount
+    tags
+    desktopImage
+    mobileImage
+    publishedAt
+  }
+}
+
+query getBlogById {
+  getBlogById(blogId: "QXV0aG9yVHlwZTox") {
+    id
+    author {
+      id
+      name
+      profilePic
+    }
+    title
+    titleSlug
+    body
+    viewCount
+    tags
+    desktopImage
+    mobileImage
+    publishedAt
+  }
+}
+
+query getCategories {
+  getCategories(searchTerm: "") {
+    id
+    thumbnail
+    name
+  }
+}
+
+query getBlogsByCategoryId {
+  getBlogsByCategoryId(categoryId: "Q2F0ZWdvcnlUeXBlOjE=", searchTerm: "!") {
+    id
+    author {
+      id
+      name
+      profilePic
+    }
+    title
+    titleSlug
+    body
+    viewCount
+    tags
+    desktopImage
+    mobileImage
+    publishedAt
+  }
+}
+
+mutation subscribe {
+  subscribe(email: "ankit@gmail.com") {
+    status
+    message
+  }
+}

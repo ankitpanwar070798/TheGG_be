@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  web:
+    build: .
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/app
+    command: bash -c "python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings  # Set Django settings module
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    restart: always
+    networks:
+      - blog_backend_tier
+    
+  celery:
+    build: .
+    command: celery -A core worker -l info
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      - db
+      - redis
+    networks:
+      - blog_backend_tier
+
+volumes:
+  postgres_data:
+
+networks:
+  blog_backend_tier:
+    driver: bridge
