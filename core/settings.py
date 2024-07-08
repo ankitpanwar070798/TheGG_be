@@ -14,6 +14,22 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import ast
 import os
 from pathlib import Path
+
+def getenv_bool(value, default):
+    return ast.literal_eval(os.environ.get(value)) if value in os.environ else False
+
+def get_list(text):
+    return [item.strip() for item in text.split(",")]
+
+def get_bool_from_env(name, default_value):
+    if name in os.environ:
+        value = os.environ[name]
+        try:
+            return ast.literal_eval(value)
+        except ValueError as e:
+            raise ValueError("{} is an invalid value for {}".format(value, name)) from e
+    return default_value
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,13 +38,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-i!^ap0i3cyu-hh7txv)h7u4wu=4*#h5suwyxt$^vg)6097otg4'
+# SECRET_KEY = 'django-insecure-i!^ap0i3cyu-hh7txv)h7u4wu=4*#h5suwyxt$^vg)6097otg4'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = getenv_bool('DEBUG', False)
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost']
+GRAPHIQL=False
 
+ALLOWED_HOSTS = get_list(os.environ.get('ALLOWED_HOSTS'))
+CSRF_TRUSTED_ORIGINS = get_list(os.environ.get('CSRF_TRUSTED_ORIGINS'))
 
 # Application definition
 
@@ -43,10 +62,13 @@ INSTALLED_APPS = [
     # Packages
     'django_editorjs_fields',
     'graphene_django',
+    'corsheaders',
 
     # Apps
     'blog',
 ]
+
+
 
 GRAPHENE = {
     "SCHEMA": "core.schema.schema",
@@ -58,6 +80,7 @@ GRAPHENE = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -67,6 +90,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'core.urls'
+
+
 
 TEMPLATES = [
     {
@@ -87,19 +112,60 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
+
+
+# development
+dev_env = os.environ.get('DJ_ENV')
+if dev_env == 'development':
+    DEBUG = True
+    GRAPHIQL=True
+    INSTALLED_APPS += ['debug_toolbar']
+    MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
+    ALLOWED_HOSTS += ['127.0.0.1','localhost','73ad-122-164-9-13.ngrok-free.app']
+    CSRF_TRUSTED_ORIGINS += ['http://127.0.0.1:8000']
+
+# CORS settings
+cors = getenv_bool('CORS', False)
+if cors is True:
+    INSTALLED_APPS += ['corsheaders']
+    MIDDLEWARE += ['corsheaders.middleware.CorsMiddleware', ]
+    CORS_ORIGIN_WHITELIST = get_list(
+        os.environ.get('CORS_ORIGIN_WHITELIST', 'http://localhost:3001,http://127.0.0.1:3001')
+    )
+
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'mydatabase',
-        'USER': 'myuser',
-        'PASSWORD': 'mypass',
-        'HOST': 'db',
-        'PORT': 5432,
+db_type = os.environ.get('DATABASE_TYPE', default='SqlLite')
+if db_type == 'SqlLite':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'blog.db.sqlite3'
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': os.environ.get('DATABASE_ENGINE'),
+            'NAME': os.environ.get('DATABASE_NAME'), 
+            'USER': os.environ.get('DATABASE_USER'), 
+            'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
+            'HOST': os.environ.get('DATABASE_HOST'), 
+            'PORT': os.environ.get('DATABASE_PORT')
+        }
+    }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': 'mydatabase',
+#         'USER': 'myuser',
+#         'PASSWORD': 'mypass',
+#         'HOST': 'db',
+#         'PORT': 5432,
+#     }
+# }
 
 
 # Password validation
@@ -130,7 +196,7 @@ AUTHENTICATION_BACKENDS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = os.environ.get('TIME_ZONE')
 
 USE_I18N = True
 
@@ -138,7 +204,7 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = (
@@ -147,7 +213,6 @@ STATICFILES_DIRS = (
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 

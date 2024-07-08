@@ -4,6 +4,8 @@ from django.db import models
 from django_editorjs_fields import EditorJsJSONField
 from django.core.exceptions import ValidationError
 from django.contrib.postgres.fields import ArrayField
+from django.conf import settings
+import os
 
 class Category(models.Model):
     name = models.CharField(max_length=150)
@@ -23,22 +25,24 @@ class Blog(models.Model):
     
     def path_for_blog_image(instance, filename):
         return 'blog_images/{0}/{1}'.format(instance.title, filename)
-
+    id = models.AutoField(primary_key=True)
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
     categories = models.ManyToManyField(Category, related_name='blogs')
     title = models.CharField(max_length=150)
-    title_slug = models.SlugField(max_length=100)
+    short_desc = models.CharField(max_length=255, blank=True, null=True)
+    slug = models.SlugField(max_length=100)
     body = EditorJsJSONField(
         null=True,
         blank=True
     )
     view_count = models.PositiveIntegerField(default=0)
-    tags = ArrayField(models.CharField(max_length=150), blank=True, null=True, default=list)
+    tags = models.CharField(max_length=150, blank=True, null=True)
     mobile_image = models.ImageField(upload_to=path_for_blog_image, blank=True, null=True)
     desktop_image = models.ImageField(upload_to=path_for_blog_image, blank=True, null=True)
     published_at = models.DateField(auto_now_add=True)
     read_time = models.PositiveIntegerField(default=0)
     is_featured = models.BooleanField(default=False)
+    is_editor_choice = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     sort_order = models.PositiveIntegerField()
 

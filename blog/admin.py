@@ -15,4 +15,4 @@ class BlogAdmin(admin.ModelAdmin):
 
     list_display = ['author', 'title', 'is_active']
     list_display_links = ['author', 'title']
-    prepopulated_fields = {'title_slug': ('title', )}
+    prepopulated_fields = {'slug': ('title', )}

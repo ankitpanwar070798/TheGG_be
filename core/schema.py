@@ -6,6 +6,9 @@ from graphql_relay import from_global_id
 from graphql.error import GraphQLError
 from django.db.models import Q
 from django.core.validators import validate_email
+from graphql_relay import to_global_id
+import uuid 
+
 
 class AuthorType(DjangoObjectType):
     class Meta:
@@ -17,7 +20,7 @@ class AuthorType(DjangoObjectType):
 
     def resolve_profile_pic(self, info):
         if self.profile_photo:
-            return self.profile_photo.url
+            return info.context.build_absolute_uri(self.profile_photo.url)
         return None
     
 class CategoryType(DjangoObjectType):
@@ -41,24 +44,29 @@ class BlogType(DjangoObjectType):
             'author',
             'categories',
             'tags',
+            'short_desc',
             'title',
-            'title_slug',
+            'slug',
             'body',
             'published_at',
-            'view_count'
+            'view_count',
+            'read_time',
         )
 
     mobile_image = graphene.String()
     desktop_image = graphene.String()
 
+    def resolve_id(self, info):
+        return to_global_id('Blog', self.pk)
+
     def resolve_mobile_image(self, info):
         if self.mobile_image:
-            return self.mobile_image.url
+            return info.context.build_absolute_uri(self.mobile_image.url)
         return None
     
     def resolve_desktop_image(self, info):
         if self.desktop_image:
-            return self.desktop_image.url
+           return info.context.build_absolute_uri(self.desktop_image.url)
         return None
     
 class BlogENUM(graphene.Enum):
@@ -66,6 +74,9 @@ class BlogENUM(graphene.Enum):
     all = 'all'
     recent = 'recent'
     trending = 'trending'
+    news = 'news'
+    editor_choice = 'editor_choice'
+
 
 class Query(graphene.ObjectType):
     get_blogs = graphene.List(BlogType, blog_type=BlogENUM(required=True), search_term=graphene.String())
@@ -83,6 +94,10 @@ class Query(graphene.ObjectType):
                 blogs = Blog.objects.filter(is_active=True).order_by('-published_at')[:4]
             case 'trending':
                 blogs = Blog.objects.filter(is_active=True).order_by('-view_count')[:4]
+            case 'news':
+                blogs = Blog.objects.filter(is_active=True, categories__name='News')
+            case 'editor_choice':
+                blogs = Blog.objects.filter(is_active=True, is_editor_choice=True)
         if search_term:
             return blogs.filter(Q(title__icontains=search_term) | Q(tags__icontains=search_term))
         from core.tasks import send_blog_notification
