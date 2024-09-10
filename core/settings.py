@@ -121,17 +121,41 @@ if dev_env == 'development':
     GRAPHIQL=True
     INSTALLED_APPS += ['debug_toolbar']
     MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
-    ALLOWED_HOSTS += ['127.0.0.1','localhost','73ad-122-164-9-13.ngrok-free.app']
-    CSRF_TRUSTED_ORIGINS += ['http://127.0.0.1:8000']
+    ALLOWED_HOSTS += ['127.0.0.1','localhost','19b5-2405-201-e00f-1117-c125-fc4c-5c7e-e336.ngrok-free.app']
+    
+    CSRF_TRUSTED_ORIGINS += [
+        'http://127.0.0.1:8000',
+        'https://19b5-2405-201-e00f-1117-c125-fc4c-5c7e-e336.ngrok-free.app/'
+    ]
 
 # CORS settings
 cors = getenv_bool('CORS', False)
 if cors is True:
     INSTALLED_APPS += ['corsheaders']
     MIDDLEWARE += ['corsheaders.middleware.CorsMiddleware', ]
-    CORS_ORIGIN_WHITELIST = get_list(
-        os.environ.get('CORS_ORIGIN_WHITELIST', 'http://localhost:3001,http://127.0.0.1:3001')
-    )
+    CORS_ORIGIN_WHITELIST = [
+    'http://localhost:3000',
+    'https://19b5-2405-201-e00f-1117-c125-fc4c-5c7e-e336.ngrok-free.app/'
+    ]
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True  # This allows all origins, use with caution in production
+CORS_ALLOW_CREDENTIALS = True
+
+# Add CORS_ALLOWED_ORIGINS if you want to specify particular origins
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "https://19b5-2405-201-e00f-1117-c125-fc4c-5c7e-e336.ngrok-free.app",
+]
+
+# Ensure CORS middleware is correctly placed
+if 'corsheaders.middleware.CorsMiddleware' not in MIDDLEWARE:
+    MIDDLEWARE.insert(0, 'corsheaders.middleware.CorsMiddleware')
+
+# Make sure corsheaders is in INSTALLED_APPS
+if 'corsheaders' not in INSTALLED_APPS:
+    INSTALLED_APPS.append('corsheaders')
+
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
